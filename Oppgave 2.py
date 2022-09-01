@@ -1,20 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
-def Q(a,b):
-    N=10**5
-    Vx=np.linspace(a,b,N)
-    m=1.6e-27*2
-    T=3000
-    K=1.38*10**-23
-    u=np.square(K*T/m)
+import random
+def Q(a,b,N,T):
+    Vx=np.linspace(a,b,N) #Hastighet for N partikler i x retning
+    m=2*1.6e-27
+    K=1.38*1e-23
+    o=(K*T)
+    sigma=(o/m)**1/2
     Dens=np.zeros(len(Vx))
     for i in range(len(Vx)):
-        Dens[i]=((m/(2*np.pi*K*T))**1/2)*np.exp((-m*abs(Vx[i])**2)/(2*K*T))
-#        Dens[i]=((1/np.square(2*np.pi)))*np.exp((-m*abs(Vx[i])**2)/(2*K*T))
+        #sannsynlighets tettheten for alle Vx verdier av N partikler
+        #Dens[i]=((m/(np.square(2*np.pi*K*T))))*np.exp((-0.5*m*Vx[i]**2)/(K*T))
+        Dens[i]=(1/(np.square(2*np.pi)*sigma))*np.exp(-Vx[i]**2/(2*sigma**2))
+        #Dens[i]=(1/(np.square(2*np.pi)*(sigma)))*(np.exp(-Vx[i]**2/(2*(sigma)**2)))
     return Vx,Dens
-Vx,Dens=Q(-2.5e4,2.5e4)
+#Vx,Dens=Q(-2.5e4,2.5e4)
+Vx,Dens=Q(-2.5e4,2.5e4,10**5,3000)
 Integral=np.zeros(len(Vx+1))
-dx=5/1e5
+dx=Vx[1]-Vx[0]
+integrate=np.trapz(Dens,Vx,dx)
 for i in range(len(Vx)-1):
     Integral[i]=dx*(1/2)*(Dens[i]+Dens[i+1])
 print(sum(Integral))
