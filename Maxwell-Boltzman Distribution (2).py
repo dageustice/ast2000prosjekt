@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+N=10**5
+K = 1.38*1e-23
 #maxwell dist av hastighet i x retning
 def Pvx(a, b, N, T):
     Vx = np.linspace(a, b, N)  # Hastighet for N partikler i x retning
@@ -13,7 +15,6 @@ def Pvx(a, b, N, T):
         # sannsynlighets tettheten for alle Vx verdier av N partikler
         Densx[i] = 1/(np.sqrt(2*np.pi)*sigma)*np.exp(-Vx[i]**2/(2*sigma**2))
     return Vx, Densx
-N=10**5
 Vx, Densx = Pvx(-2.5e4, 2.5e4, N, 3000)
 Integral = np.zeros(len(Vx+1))
 dx = Vx[1]-Vx[0]
@@ -38,7 +39,6 @@ def Pv(a, b, N, T):
         Dens[i] = (((m/(2*np.pi*K*T))**(3/2))*4*np.pi*(V[i]**2)*np.exp(-0.5*(m*V[i]**2/(K*T))))
         
     return V, Dens
-N=10**5
 V,Dens=Pv(0,3e4, N, 3000)
 dv=V[1]-V[0]
 integrate = np.trapz(Dens, V, dv)
