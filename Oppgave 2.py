@@ -74,3 +74,26 @@ def Pv(a, b, N, T):
     return V, Integral
 v,u=Pv(0,10*20,N,3000)
 print(u)
+#bevegelses mengde
+def Pp(a, b, N, T):
+    V = np.linspace(a, b, N)  # Hastighet for N partikler i x retning
+    m = 2*1.6e-27
+    
+    K = 1.38*1e-23
+    P = np.zeros(len(V))
+    p = np.zeros(len(V))
+    dv=V[1]-V[0] #prøvde å gange inn dv tidligere
+    for i in range(len(V)):
+        p[i]=V[i]*m
+        P[i] = (1/3)*(p[i]*V[i])*N*(1/(2*np.pi*K*T))**(3/2)*np.exp(-(p[i]**2/(2*m*K*T)))*4*np.pi*p[i]**2 
+    return p,P
+V,Dens=Pp(0,3e4,N,3000)
+dp=V[1]-V[0]
+m = 2*1.6e-27
+K = 1.38*1e-23
+integral=np.trapz(Dens,V,dp)
+print(integral)
+for i in range(len(V)-1):
+    Integral[i] = dp*(1/2)*(Dens[i]+Dens[i+1])
+print(sum(Integral))
+print(N*K*3000)
