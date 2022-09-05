@@ -114,3 +114,4 @@ with open("100atoms.xyz", "a") as file:
                 file.write(f"{N_pos0[j][i]*1e6} ")
         file.write("\n")
     file.close()
+    
