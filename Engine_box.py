@@ -5,30 +5,32 @@ import matplotlib.pyplot as plt
 import random as rng
 from numba import jit
 from ast2000tools import constants
-# inx = np.argwhere(np.abs(pos[:,0])>=num)
-# iny = np.argwhere(np.abs(pos[:, 1])>=num)
-# konstanter
-m = ast2000tools.constants.m_H2
 
+k = ast2000tools.constants.k_B
+m = ast2000tools.constants.m_H2
+print(np.sqrt(k*3000/m))
+@jit(nopython=True)
 def simulate(N, T, box, NozzleToBoxRatio, Time, dt):
-    nozzle_radius = box_side*NozzleToBoxRatio
+    nozzle_radius = box_side * NozzleToBoxRatio / 2
+    # lengden på radius som et forhold til lengden til boksen
     momentum = 0
     particles = 0
-    N_pos = np.zeros([Time, N, 3])
-    N_pos0 = np.zeros([N, 3])
-    for i in range(N):
-        N_pos0[i][0] = rng.random()*box_side
-        N_pos0[i][1] = rng.random()*box_side
-        N_pos0[i][2] = rng.random()*box_side
+    N_pos = np.zeros((Time, N, 3), dtype=np.float64)
+    N_pos0 = np.zeros((N, 3), dtype=np.float64)
+    for i in range(N):  # lager tilfeldig fordelt partikler i boksen
+        # når N er stor, vil partiklene ha en uniform fordeling.
+        N_pos0[i][0] = rng.random() * box_side
+        N_pos0[i][1] = rng.random() * box_side
+        N_pos0[i][2] = rng.random() * box_side
     N_pos[0] = N_pos0
-    sigma = np.sqrt(4131*T)
-    v0 = np.random.normal(0, sigma, (N, 3))
+    sigma = np.sqrt(4131 * T)  # skriver 4131 for å hindre feil med små/store tall
+    v0 = np.random.normal(0, sigma, (N, 3))  # Maxwell boltzmann fordeling av farten
     for i in range(1, Time):
         for j in range(N):
-            N_pos[i][j] = N_pos[i-1][j] + v0[j]*dt
+            N_pos[i][j] = N_pos[i - 1][j] + v0[j] * dt
             pos = N_pos[i][j]
             if pos[1] < 0:
-                pos_radius = np.sqrt(pos[0]**2+pos[2]**2)
+                pos_radius = np.sqrt(pos[0] ** 2 + pos[2] ** 2)
                 if pos_radius < nozzle_radius:
                     momentum += v0[j][1]
                     particles += 1
@@ -36,30 +38,24 @@ def simulate(N, T, box, NozzleToBoxRatio, Time, dt):
                 pos = N_pos[i][j][k]
                 if box_side <= pos or pos <= 0:
                     v0[j][k] = -v0[j][k]
-    return [N_pos, v0, momentum, particles]
+    return (N_pos, v0, momentum, particles)
 
 
-N = int(1e4)
+N = int(1e5)
 T = 3000
 box_side = 1e-6
-NozzleToBoxRatio = 1/2*np.sqrt(np.pi)
+# NozzleToBoxRatio = 1/(2*np.sqrt(np.pi)) # Hvis vi ønsker 0.25L^2
+NozzleToBoxRatio = 1
 Time = 1000
 dt = 1e-12
 
 N_pos, v0, momentum, particles = simulate(
     N, T, box_side, NozzleToBoxRatio, Time, dt)
+print("For a single box unit:")
+print(f"change momentum per second: {-momentum * 1e9* m} m/s^2")
+print(f"mass loss per second: {particles * 1e9 * m} kg/s")
 
 
-print(f"change momentum per second: {-momentum*1e9*10*m}")
-print(f"mass loss per second: {particles*10*1e9*m}")
-
-"""
-utskrift:
-
-change momentum per second: f1.2620179237607276e-09
-mass loss per second: 2.905249680679998e-13
-
-"""
 
 """
 # with open("1e5atoms.xyz", "a") as file:
