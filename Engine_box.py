@@ -55,6 +55,27 @@ print("For a single box unit:")
 print(f"change momentum per second: {-momentum * 1e9* m} m/s^2")
 print(f"mass loss per second: {particles * 1e9 * m} kg/s")
 
+force=-momentum*m*1e9
+burner=particles*m/1e-9
+rocketmass=1000000
+speedboost=11200
+def fuel_burnt(B,rocketthrustforce,fuel_consumption,initialrocketmass,speedboost):
+    v = 0
+    M=initialrocketmass+N*m*B
+    fuelburned = 0
+    while v <= speedboost:
+        i = 1
+        dt = 1e-4
+        a=rocketthrustforce/(M-i*dt*B*fuel_consumption)
+        i +=1
+        v+=a*dt
+        fuelburned += B*fuel_consumption*dt
+    return fuelburned
+
+    
+    
+ 
+print(fuel_burnt(1e20,force,burner,rocketmass,speedboost))
 
 
 """
