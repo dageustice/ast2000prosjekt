@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import random as rng
 from numba import jit
 from ast2000tools import constants
+import ast2000tools.utils as utils
+seed = utils.get_seed('<josephge>')
 
 k = ast2000tools.constants.k_B
 m = ast2000tools.constants.m_H2
