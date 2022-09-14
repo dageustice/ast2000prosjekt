@@ -1,101 +1,62 @@
 # IKKE KODEMAL
-import ast2000tools.constants
 import numpy as np
-import matplotlib.pyplot as plt
 import random as rng
 from numba import jit
-from ast2000tools import constants
-import ast2000tools.utils as utils
-seed = utils.get_seed('<josephge>')
+from ast2000tools import constants as cons
 
-k = ast2000tools.constants.k_B
-m = ast2000tools.constants.m_H2
-print(np.sqrt(k*3000/m))
 @jit(nopython=True)
 def simulate(N, T, box, NozzleToBoxRatio, Time, dt):
-    nozzle_radius = box_side * NozzleToBoxRatio / 2
-    # lengden på radius som et forhold til lengden til boksen
+    sigma = np.sqrt(cons.k_B * T / cons.m_H2)  # StanDev for
+    # StanDev for maxwell-boltzmann distribusjonen
+    nozzle_radius = box * NozzleToBoxRatio / 2
+    # størrelse på radius i forhold til 1/2 bokslengde
     momentum = 0
     particles = 0
     N_pos = np.zeros((Time, N, 3), dtype=np.float64)
     N_pos0 = np.zeros((N, 3), dtype=np.float64)
+    # da har vi alle konstanter, nå kan vi loope:
     for i in range(N):  # lager tilfeldig fordelt partikler i boksen
         # når N er stor, vil partiklene ha en uniform fordeling.
-        N_pos0[i][0] = rng.random() * box_side
-        N_pos0[i][1] = rng.random() * box_side
-        N_pos0[i][2] = rng.random() * box_side
-    N_pos[0] = N_pos0
-    sigma = np.sqrt(4131 * T)  # skriver 4131 for å hindre feil med små/store tall
+        N_pos0[i][0] = rng.random() * box
+        N_pos0[i][1] = rng.random() * box
+        N_pos0[i][2] = rng.random() * box
+    N_pos[0] = N_pos0  # initialposisjon til partiklene
     v0 = np.random.normal(0, sigma, (N, 3))  # Maxwell boltzmann fordeling av farten
     for i in range(1, Time):
         for j in range(N):
             N_pos[i][j] = N_pos[i - 1][j] + v0[j] * dt
-            pos = N_pos[i][j]
+            pos = N_pos[i][j]   # forkorter variabelen
             if pos[1] < 0:
                 pos_radius = np.sqrt(pos[0] ** 2 + pos[2] ** 2)
                 if pos_radius < nozzle_radius:
-                    momentum += v0[j][1]
-                    particles += 1
-            for k in range(3):
-                pos = N_pos[i][j][k]
-                if box_side <= pos or pos <= 0:
-                    v0[j][k] = -v0[j][k]
-    return (N_pos, v0, momentum, particles)
+                    momentum += v0[j][1]    # bevegelsesmengden til partikkelen
+                    particles += 1          # teller antal unnslippede partikler
+        for k in range(3):  # sjekker om partikkelen er utenfor boksen
+            pos = N_pos[i][j][k]
+            if box <= pos or pos <= 0:
+                v0[j][k] = -v0[j][k]  # kollisjon <=> fortegnsskifte
+    return (N_pos, v0, -momentum*cons.m_H2/(Time*dt),
+            particles*cons.m_H2/(Time*dt))
 
 
-N = int(1e5)
-T = 3000
-box_side = 1e-6
-# NozzleToBoxRatio = 1/(2*np.sqrt(np.pi)) # Hvis vi ønsker 0.25L^2
-NozzleToBoxRatio = 1
-Time = 1000
-dt = 1e-12
-
-N_pos, v0, momentum, particles = simulate(
-    N, T, box_side, NozzleToBoxRatio, Time, dt)
-print("For a single box unit:")
-print(f"change momentum per second: {-momentum * 1e9* m} m/s^2")
-print(f"mass loss per second: {particles * 1e9 * m} kg/s")
-
-force=-momentum*m*1e9
-burner=particles*m/1e-9
-rocketmass=1000000
-speedboost=11200
-def fuel_burnt(B,rocketthrustforce,fuel_consumption,initialrocketmass,speedboost):
-    v = 0
-    M=initialrocketmass+N*m*B
+def fuel_burnt(ccArea, box, rocketthrustforce, fuelmass, fuel_consumption,
+               rocketmass, speedboost):
+    B = ccArea/(box**2)     # tversnittarealet / boksareal = antall bokser
+    v = 0   # startfart til raketten
+    M = rocketmass + fuelmass
     fuelburned = 0
+    i = 1
+    dt = 1e-3
     while v <= speedboost:
-        i = 1
-        dt = 1e-4
-        a=rocketthrustforce/(M-i*dt*B*fuel_consumption)
-        i +=1
-        v+=a*dt
-        fuelburned += B*fuel_consumption*dt
-    return fuelburned
+        a = B*rocketthrustforce/M
+        v += a*dt
+        fuelburned += B*fuel_consumption*dt  # fuel brukt øker for hver dt
+        M -= B*fuel_consumption*dt  # massen minker for hver dt
+        if fuelburned > fuelmass:
 
-    
-    
- 
-print(fuel_burnt(1e20,force,burner,rocketmass,speedboost))
-
-
-"""
-# with open("1e5atoms.xyz", "a") as file:
-    for k in range(Time):
-        file.write(f"{N+8}\n")
-        for j in range(N):
-            file.write("\nAr ")
-            for i in range(3):
-                file.write(f"{N_pos[k][j][i]*1e6} ")
-        file.write("\nNe -0.01 -0.01 -0.01")
-        file.write("\nNe -0.01 -0.01 1.01")
-        file.write("\nNe -0.01 1.01 -0.01")
-        file.write("\nNe -0.01 1.01 1.01")
-        file.write("\nNe 1.01 -0.01 -0.01")
-        file.write("\nNe 1.01 -0.01 1.01")
-        file.write("\nNe 1.01 1.01 -0.01")
-        file.write("\nNe 1.01 1.01 1.01")
-        file.write("\n")
-    file.close()
-"""
+            print("Burned up all the fuel!")
+            print(f"Final velocity: {v:.2f}")
+            print(f"{i*dt:.0f} seconds after boosting")
+            break
+        i += 1
+    return fuelburned, fuelmass-fuelburned, (dt*i), v
