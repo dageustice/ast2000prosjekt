@@ -1,0 +1,55 @@
+# IKKE KODEMAL
+import ast2000tools.utils
+from Engine_box import *
+from ast2000tools.solar_system import SolarSystem
+from ast2000tools.space_mission import SpaceMission
+
+seed = ast2000tools.utils.get_seed('josephge')
+N, T, box = int(1e5), 5500, 1e-6
+N2B_ratio, Time, dt = 1, 1000, 1e-13
+mission = SpaceMission(seed)
+system = SolarSystem(seed)
+
+N_pos, v0, momentum, particles = simulate(N, T, box, N2B_ratio, Time, dt)
+
+rocketmass = mission.spacecraft_mass
+fuelmass = rocketmass*800
+speedboost = 33e3
+ccArea = mission.spacecraft_area
+
+fuelburned, fuel_left, time, v_1 \
+    = fuel_burnt(ccArea, box, momentum, fuelmass, particles, rocketmass, speedboost)
+
+thrust = momentum * ccArea/box**2
+mass_loss = particles * ccArea/box**2
+
+print(f"total fuel burned: {fuelburned:.0f} kg")
+print(f"over a period of: {time:.1f} s")
+print(f"fuel left: {fuel_left:.0f} kg")
+print(f"final speed: {v_1:.0f} m/s")
+print(f"average acceleration: {v_1/time:.0f} m/s^2")
+print('My system has a {:g} solar mass star with a radius of {:g} kilometers.'
+      .format(system.star_mass, system.star_radius))
+
+
+for i in range(system.number_of_planets):
+    print(f'Planet {i}: {system.types[i]}, {system.masses[i]*3331e3:.3f} M_Earth,'
+          f' r={system.radii[i]:.0f} km, semi-major axis = {system.semi_major_axes[i]}')
+
+
+tlaunch = 20*60-1    #skal ta mindre enn 20 minutter
+radius = system.radii[0] * 1e3                      # m
+R0 = system.initial_positions[:, 0]                 # AU
+R0 = R0 + np.array([radius, 0]) * 6.68459e-12       # AU
+t0 = 0                                              # yr
+thrust = momentum * ccArea/box**2
+mass_loss = particles * ccArea/box**2
+initial_fuel_mass = fuelmass
+
+mission.set_launch_parameters(thrust, mass_loss, fuelmass, tlaunch,
+                              R0, t0)
+mission.launch_rocket()
+
+SolarSystem.print_info(system)
+
+print(thrust)
