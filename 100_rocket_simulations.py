@@ -1,4 +1,5 @@
 from RocketThrust import *
+from tqdm import trange
 n = 100
 fuelburned = np.zeros(n)
 fuel_left = np.zeros(n)
@@ -16,9 +17,9 @@ for i in trange(n):
     a[i] = a_all[-1]
 
 all_info = [fuelburned, fuel_left, time, v_1, a]
-texts = ["Total drivstoff forbrent:", "Drivstoff igjen: ",
-         "Tiden for hele turen: ", "Sluttfart: ",
-         "Sluttakselerasjon: "]
+texts = ["Total drivstoff forbrent", "Drivstoff igjen",
+         "Tiden for hele turen", "Sluttfart",
+         "Sluttakselerasjon"]
 iterations = np.linspace(0, n, n)
 
 for i in range(len(all_info)):
@@ -26,5 +27,7 @@ for i in range(len(all_info)):
     max, min = np.max(all_info[i]), np.min(all_info[i])
     mean = (max+min)/2
     plusminus = (max-min)/2
-    print(texts[i], f"{mean:.0f} ± {plusminus:.0f}")
+    print(texts[i], ": ", f"{mean:.0f} ± {plusminus:.0f}")
+plt.legend(texts)
+plt.title("Resultater normalisert på gjennomsnittsresultat")
 plt.grid(); plt.show()
