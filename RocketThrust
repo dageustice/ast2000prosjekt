@@ -1,55 +1,56 @@
 # IKKE KODEMAL
-import ast2000tools.utils
 from Engine_box import *
-from ast2000tools.solar_system import SolarSystem
-from ast2000tools.space_mission import SpaceMission
+from solar_system import mission, system
 
-seed = ast2000tools.utils.get_seed('josephge')
-N, T, box = int(1e5), 5500, 1e-6
-N2B_ratio, Time, dt = 1, 1000, 1e-13
-mission = SpaceMission(seed)
-system = SolarSystem(seed)
-
-N_pos, v0, momentum, particles = simulate(N, T, box, N2B_ratio, Time, dt)
-
+# Definerer alle variablene:
+N, T, box = int(1e5), 4200, 1e-6
+# Antall partikler, temperatur, bokslengde
+N2B_ratio, Time, dt = 0.42, 1000, 1e-13
+# forhold mellom unnslipningshullareal og boksareal
 rocketmass = mission.spacecraft_mass
-fuelmass = rocketmass*800
-speedboost = 33e3
+# henter rakettmassen fra ast2000tools
+fuelmass = rocketmass*150
+# velger at fuelmasse er 440000 kg
+speedboost = np.sqrt(2*cons.G*system.masses[0] *
+                     cons.m_sun/(system.radii[0]*1000))
+# ønsket hastighet (unnslipningshast. på overflaten av første planet)
 ccArea = mission.spacecraft_area
+# tversnittareal av raketten
+N_pos, v0, momentum, particles =\
+    simulate(N, T, box, N2B_ratio, Time, dt)
+# simulerer en enkelt boks
 
-fuelburned, fuel_left, time, v_1 \
-    = fuel_burnt(ccArea, box, momentum, fuelmass, particles, rocketmass, speedboost)
-
+fuelburned, fuel_left, time, v_1, a \
+    = fuel_burned(ccArea, box, momentum, fuelmass,
+                  particles, rocketmass, speedboost)
+# simulerer drivstofforbruk etter å ha nådd ønsket hastighet
 thrust = momentum * ccArea/box**2
+# sum drivkraft per sekund = bevegelsesmengde per sekund * antall bokser
 mass_loss = particles * ccArea/box**2
+# massetap per sekund = antall partikler ut per sekund * antall bokser
 
-print(f"total fuel burned: {fuelburned:.0f} kg")
-print(f"over a period of: {time:.1f} s")
-print(f"fuel left: {fuel_left:.0f} kg")
-print(f"final speed: {v_1:.0f} m/s")
-print(f"average acceleration: {v_1/time:.0f} m/s^2")
-print('My system has a {:g} solar mass star with a radius of {:g} kilometers.'
-      .format(system.star_mass, system.star_radius))
+print(f"Total drivstoff forbrent: {fuelburned:.0f} kg \n"
+       f"i løpet av: {time:.1f} s \n"
+       f"Drivstoff igjen: {fuel_left:.0f} kg \n"
+       f"Sluttfart: {v_1:.0f} m/s \n"
+       f"Sluttakselerasjon: {thrust/(rocketmass+fuel_left):.0f} m/s^2 \n")
 
+# Nå simulerer vi samme oppskytning, men med modulen fra ast2000tools
 
-for i in range(system.number_of_planets):
-    print(f'Planet {i}: {system.types[i]}, {system.masses[i]*3331e3:.3f} M_Earth,'
-          f' r={system.radii[i]:.0f} km, semi-major axis = {system.semi_major_axes[i]}')
-
-
-tlaunch = 20*60-1    #skal ta mindre enn 20 minutter
-radius = system.radii[0] * 1e3                      # m
+tlaunch = 20*60-1   #det skal ta maks 20 minutter
+radius = system.radii[0] * 1e3                      # meter
 R0 = system.initial_positions[:, 0]                 # AU
 R0 = R0 + np.array([radius, 0]) * 6.68459e-12       # AU
-t0 = 0                                              # yr
-thrust = momentum * ccArea/box**2
-mass_loss = particles * ccArea/box**2
-initial_fuel_mass = fuelmass
+t0 = 0                                              # år
 
 mission.set_launch_parameters(thrust, mass_loss, fuelmass, tlaunch,
                               R0, t0)
 mission.launch_rocket()
+# mission er hentet fra ast2000tools
 
-SolarSystem.print_info(system)
-
-print(thrust)
+t = np.linspace(0, time, len(a))
+plt.plot(t, a); plt.grid()  #plotter akselerasjonen til raketten
+plt.xlabel("tid [s]"); plt.ylabel("akselerasjon [m/s^2]")
+plt.legend([f"Maks Akselerasjon = {a[-1]:.0f} m/s^2"])
+plt.title("Akselerasjon til rakett uten hensyn til gravitasjon fra planet")
+plt.show(); plt.savefig("AkselerasjonUtenPlanet.png")
