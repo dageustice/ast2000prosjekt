@@ -1,0 +1,13 @@
+def theta_new(X, Y, theta0):
+    rho = np.sqrt(X**2+Y**2)
+    beta = 2 * np.arctan(rho/2)
+    ledd = np.cos(beta)*np.cos(theta0)+Y/rho*np.sin(beta)*np.sin(theta0)
+    theta_new = theta0 - np.arcsin(ledd)
+    return theta_new
+
+def phi_new(X, Y, theta0, phi_0):
+    rho = np.sqrt(X**2+Y**2)
+    beta = 2 * np.arctan(rho/2)
+    ledd = X*np.sin(beta)/(rho*np.sin(theta0)*np.cos(beta)-Y*np.cos(theta0)*np.sin(beta))
+    phi_new = phi_0 + np.arctan(ledd)
+    return phi_new
