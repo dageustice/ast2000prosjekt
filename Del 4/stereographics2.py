@@ -4,14 +4,7 @@ import numpy as np
 from tqdm import trange
 
 
-img = Image.open("sample0000.png") # Open existing png
-pixels = np.array(img) # png into numpy array
-width = len(pixels[0, :])
-redpixs = [(255, 50, 60) for i in range(width)] # Array of red pixels
-pixels[239, :] = redpixs # Insert into line 500
-img2 = Image.fromarray(pixels)
-img2.save("exampleWithRedLine.png") # Make new png
-print(np.shape(pixels))
+
 
 def grid(theta0, phi0, fil):
     img=Image.open(fil)
