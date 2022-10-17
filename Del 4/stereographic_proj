@@ -20,17 +20,14 @@ def grid(theta0, phi0, width, height):
 
 
 bilde = np.load("himmelkule.npy")
-
 width = 640
 height = 480
 x, y, theta, phi = grid(np.pi / 2, 0, 640, 480)
-
 a = np.zeros((height, width, 3), dtype=np.uint8)
-print(np.shape(a))
-print(np.shape(theta))
-for i in trange(height):
+
+for i in range(height):
     for j in range(width):
         a[i][j] = bilde[mission.get_sky_image_pixel(theta[i][j], phi[i][j])][2:]
-img6 = Image.fromarray(a)
-img6.save("himmekule.png")
 
+himmelkule = Image.fromarray(a)
+himmelkule.save("himmekule.png")
